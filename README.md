@@ -44,6 +44,19 @@ For the guided setup:
 
 That creates `.venv/`, installs the package, creates `.env` from `.env.example`, and runs a no-LLM smoke test. See `SETUP.md` for the full first-run guide.
 
+### Terminal bundle (`julia reader`)
+
+For a dedicated copy under **`terminal/`** (its own `.venv` plus **`julia reader`** and **`julia-reader`** launchers):
+
+```bash
+cd terminal
+bash setup.sh
+export PATH="$(pwd)/bin:$PATH"
+julia reader --help
+```
+
+See **[terminal/README.md](terminal/README.md)**.
+
 Manual setup:
 
 ```bash

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Two-word launcher:  julia reader [args]
+# Same CLI as:        julia-reader [args]   or   python -m julia_reader [args]
+#
+# WARNING: If this directory is on PATH, `julia` refers to THIS script, not the
+# Julia programming language. Use `julia reader ...` only, or prefer `julia-reader`.
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TERMINAL_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+VENV="$TERMINAL_ROOT/.venv"
+JR="$VENV/bin/julia-reader"
+
+if [[ ! -x "$JR" ]]; then
+  echo "Julia Reader CLI not installed." >&2
+  echo "Run once:  bash $TERMINAL_ROOT/setup.sh" >&2
+  exit 1
+fi
+
+if [[ "${1:-}" != reader ]]; then
+  cat >&2 <<EOF
+Usage: julia reader [OPTIONS]
+
+This PATH entry is the Julia Reader harness only. Examples:
+  julia reader --help
+  julia reader -f transcript.txt -o ~/project
+  julia reader -f notes.md --no-llm --quiet
+
+For the Julia programming language, call it by full path or reorder PATH so
+this bin/ directory is not ahead of Julia's install.
+EOF
+  exit 2
+fi
+
+shift
+exec "$JR" "$@"
