@@ -1,0 +1,22 @@
+# Reader Run Log
+
+- 2026-05-09T14:08:16 — run started
+- 2026-05-09T14:08:16 — raw input saved
+- 2026-05-09T14:08:16 — normalization complete
+- 2026-05-09T14:08:17 — sentence splitting complete (1756 sentences)
+- 2026-05-09T14:08:18 — lake strings generated (1756 units, 1638 breaks)
+- 2026-05-09T14:08:18 — chunking complete (8 chunks)
+- 2026-05-09T14:08:18 — C0001 summarized
+- 2026-05-09T14:08:18 — C0002 summarized
+- 2026-05-09T14:08:18 — C0003 summarized
+- 2026-05-09T14:08:18 — C0004 summarized
+- 2026-05-09T14:08:18 — C0005 summarized
+- 2026-05-09T14:08:18 — C0006 summarized
+- 2026-05-09T14:08:18 — C0007 summarized
+- 2026-05-09T14:08:18 — C0008 summarized
+- 2026-05-09T14:08:18 — live summary updated
+- 2026-05-09T14:08:18 — book plan generated
+- 2026-05-09T14:08:18 — pages written
+- 2026-05-09T14:08:18 — Harper Reader packet artifacts written
+- 2026-05-09T14:08:18 — validation complete
+- 2026-05-09T14:08:18 — run complete

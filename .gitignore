@@ -1,0 +1,28 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+_reader/
+
+# Python packaging
+*.egg-info/
+dist/
+build/
+
+# Next.js demo
+demo/nextjs-reader/node_modules/
+demo/nextjs-reader/.next/
+demo/nextjs-reader/out/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+.orbos/

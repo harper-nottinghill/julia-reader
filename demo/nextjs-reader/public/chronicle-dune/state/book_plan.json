@@ -1,0 +1,164 @@
+{
+  "chapters": [
+    {
+      "chapter_id": "CH002",
+      "chapter_number": 2,
+      "title": "10191 1965 2020 2021 78Th",
+      "slug": "10191_1965_2020_2021_78th",
+      "description": "Reader chapter covering 10191 1965 2020 2021 78Th.",
+      "chunk_ids": [
+        "C0001"
+      ],
+      "page_plan": [
+        {
+          "page_id": "CH002_P001",
+          "filename": "page_001.md",
+          "title": "10191 1965 2020 2021 78Th",
+          "chunk_ids": [
+            "C0001"
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_id": "CH003",
+      "chapter_number": 3,
+      "title": "Act Actual Air Alliance Allowed",
+      "slug": "act_actual_air_alliance_allowed",
+      "description": "Reader chapter covering Act Actual Air Alliance Allowed.",
+      "chunk_ids": [
+        "C0002"
+      ],
+      "page_plan": [
+        {
+          "page_id": "CH003_P001",
+          "filename": "page_001.md",
+          "title": "Act Actual Air Alliance Allowed",
+          "chunk_ids": [
+            "C0002"
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_id": "CH004",
+      "chapter_number": 4,
+      "title": "400 450 Absolution Activate Advance",
+      "slug": "400_450_absolution_activate_advance",
+      "description": "Reader chapter covering 400 450 Absolution Activate Advance.",
+      "chunk_ids": [
+        "C0003"
+      ],
+      "page_plan": [
+        {
+          "page_id": "CH004_P001",
+          "filename": "page_001.md",
+          "title": "400 450 Absolution Activate Advance",
+          "chunk_ids": [
+            "C0003"
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_id": "CH005",
+      "chapter_number": 5,
+      "title": "000 120 140 2024 Abundance",
+      "slug": "000_120_140_2024_abundance",
+      "description": "Reader chapter covering 000 120 140 2024 Abundance.",
+      "chunk_ids": [
+        "C0004"
+      ],
+      "page_plan": [
+        {
+          "page_id": "CH005_P001",
+          "filename": "page_001.md",
+          "title": "000 120 140 2024 Abundance",
+          "chunk_ids": [
+            "C0004"
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_id": "CH006",
+      "chapter_number": 6,
+      "title": "100 Abandon Again Against Agreed",
+      "slug": "100_abandon_again_against_agreed",
+      "description": "Reader chapter covering 100 Abandon Again Against Agreed.",
+      "chunk_ids": [
+        "C0005"
+      ],
+      "page_plan": [
+        {
+          "page_id": "CH006_P001",
+          "filename": "page_001.md",
+          "title": "100 Abandon Again Against Agreed",
+          "chunk_ids": [
+            "C0005"
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_id": "CH007",
+      "chapter_number": 7,
+      "title": "Able Across Actually Against Agony",
+      "slug": "able_across_actually_against_agony",
+      "description": "Reader chapter covering Able Across Actually Against Agony.",
+      "chunk_ids": [
+        "C0006"
+      ],
+      "page_plan": [
+        {
+          "page_id": "CH007_P001",
+          "filename": "page_001.md",
+          "title": "Able Across Actually Against Agony",
+          "chunk_ids": [
+            "C0006"
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_id": "CH008",
+      "chapter_number": 8,
+      "title": "000 800 Above Accelerates Accelerating",
+      "slug": "000_800_above_accelerates_accelerating",
+      "description": "Reader chapter covering 000 800 Above Accelerates Accelerating.",
+      "chunk_ids": [
+        "C0007"
+      ],
+      "page_plan": [
+        {
+          "page_id": "CH008_P001",
+          "filename": "page_001.md",
+          "title": "000 800 Above Accelerates Accelerating",
+          "chunk_ids": [
+            "C0007"
+          ]
+        }
+      ]
+    },
+    {
+      "chapter_id": "CH009",
+      "chapter_number": 9,
+      "title": "Accept Al-Gaib Amtal Are Atreides",
+      "slug": "accept_al_gaib_amtal_are_atreides",
+      "description": "Reader chapter covering Accept Al-Gaib Amtal Are Atreides.",
+      "chunk_ids": [
+        "C0008"
+      ],
+      "page_plan": [
+        {
+          "page_id": "CH009_P001",
+          "filename": "page_001.md",
+          "title": "Accept Al-Gaib Amtal Are Atreides",
+          "chunk_ids": [
+            "C0008"
+          ]
+        }
+      ]
+    }
+  ]
+}
