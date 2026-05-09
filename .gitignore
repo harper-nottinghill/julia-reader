@@ -25,3 +25,4 @@ demo/nextjs-reader/out/
 .idea/
 .vscode/
 *.swp
+.orbos/
