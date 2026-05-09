@@ -33,7 +33,7 @@ julia reader -f ../demo/nextjs-reader/content/dune-2021-transcript.txt -o ~/out 
 julia-reader -f ./doc.txt -o . --no-llm
 ```
 
-With API keys, copy `.env.example` from the repo root to `.env` (or pass `--env-file`) and omit `--no-llm`.
+With API keys, from the **repository root** run **`bash scripts/configure-model.sh`** (presets for OpenAI, Groq, Together, OpenRouter, LM Studio, or custom URL). Then run the CLI from that directory so `.env` loads, or pass **`--env-file /path/to/.env`**. Omit **`--no-llm`** when using an API.
 
 ## Notes
 

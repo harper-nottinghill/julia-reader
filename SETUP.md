@@ -28,7 +28,13 @@ The setup script will:
 
 ## 3. Add An LLM
 
-Edit `.env`:
+Recommended — guided presets (OpenAI, Groq, Together, OpenRouter, LM Studio, or custom URL):
+
+```bash
+bash scripts/configure-model.sh
+```
+
+That merges a marked block into `.env` (see `docs/JuliaReaderCLI/configure-model.md`). Or edit `.env` by hand:
 
 ```bash
 JULIA_READER_API_KEY=sk-...

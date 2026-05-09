@@ -6,6 +6,7 @@ This folder documents the **command-line** Julia Reader harness and the optional
 |-----|----------------|
 | **[How the terminal bundle works](how-the-terminal-bundle-works.md)** | What `terminal/setup.sh`, `bin/julia`, and `bin/julia-reader` do under the hood |
 | **[CLI reference](cli-reference.md)** | Flags, env vars, output layout — same behavior as `python -m julia_reader` |
+| **[Configure model / API](configure-model.md)** | `configure-model.sh` — add any OpenAI-compatible gateway + model to `.env` |
 
 Related files elsewhere in the repo:
 

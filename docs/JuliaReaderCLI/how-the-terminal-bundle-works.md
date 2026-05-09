@@ -104,6 +104,12 @@ If dependencies or packaging change, re-run:
 bash terminal/setup.sh
 ```
 
+Re-run from the **repo root** if you add a new LLM provider or model id:
+
+```bash
+bash scripts/configure-model.sh
+```
+
 Or manually:
 
 ```bash

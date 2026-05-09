@@ -57,6 +57,14 @@ julia reader --help
 
 See **[terminal/README.md](terminal/README.md)** and **[docs/JuliaReaderCLI/](docs/JuliaReaderCLI/)** for how the bundle works.
 
+**LLM / model setup** — register any OpenAI-compatible API (OpenAI, Groq, Together, LM Studio, …):
+
+```bash
+bash scripts/configure-model.sh
+```
+
+See **[docs/JuliaReaderCLI/configure-model.md](docs/JuliaReaderCLI/configure-model.md)**.
+
 Manual setup:
 
 ```bash

@@ -69,7 +69,7 @@ echo "  ${GREEN}${BOLD}Setup complete.${RESET}"
 echo
 echo "  ${STONE}Next:${RESET}"
 echo "    source .venv/bin/activate"
-echo "    edit .env"
+echo "    bash scripts/configure-model.sh   ${STONE}# optional: API key + model presets${RESET}"
 echo "    julia-reader -f path/to/your-text.md -o ."
 echo
 echo "  ${STONE}Without an API key:${RESET}"

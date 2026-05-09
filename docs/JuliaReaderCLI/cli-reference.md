@@ -29,6 +29,8 @@ cat long.txt | julia-reader -o ~/project --quiet
 
 ## Environment variables
 
+Use **`bash scripts/configure-model.sh`** (from repo root) for guided presets and merging into `.env` — see **[configure-model.md](configure-model.md)**.
+
 Loaded from **`--env-file`** or process environment (see **`.env.example`** at repo root):
 
 | Variable | Role |
