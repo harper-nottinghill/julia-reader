@@ -39,3 +39,7 @@ With API keys, copy `.env.example` from the repo root to `.env` (or pass `--env-
 
 - **venv** lives at `terminal/.venv` (ignored by git).
 - If you use the **Julia language** as well, avoid putting `terminal/bin` ahead of Julia’s real binary, or use `julia-reader` instead of `julia reader`.
+
+## More detail
+
+See **[docs/JuliaReaderCLI/](../docs/JuliaReaderCLI/)** — especially _How the terminal bundle works_ and the CLI reference.

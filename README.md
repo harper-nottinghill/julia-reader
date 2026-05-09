@@ -55,7 +55,7 @@ export PATH="$(pwd)/bin:$PATH"
 julia reader --help
 ```
 
-See **[terminal/README.md](terminal/README.md)**.
+See **[terminal/README.md](terminal/README.md)** and **[docs/JuliaReaderCLI/](docs/JuliaReaderCLI/)** for how the bundle works.
 
 Manual setup:
 
