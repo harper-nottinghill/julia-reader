@@ -22,7 +22,8 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/nottinghillai/orbos"
+Homepage = "https://github.com/harper-nottinghill/julia-reader"
+Repository = "https://github.com/harper-nottinghill/julia-reader"
 
 [project.scripts]
 julia-reader = "julia_reader.cli:main"
