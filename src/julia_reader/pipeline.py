@@ -234,7 +234,7 @@ def run_reader(
         text = _chunk_text(chunk, sentence_by_id)
         _reader_live(
             "✦ Reading Rune",
-            f"{chunk['chunk_id']} enters the spell circle",
+            f"{chunk['chunk_id']} enters the reading circle",
             detail=(
                 f"{len(chunk.get('sentence_ids', []))} sentences, "
                 f"{chunk.get('estimated_tokens', 0)} tokens, {chunk.get('break_count', 0)} breaks"
