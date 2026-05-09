@@ -1,6 +1,6 @@
 # Setup Guide
 
-This guide helps a new user run **Julia Reader** without knowing anything about Orbos.
+This guide helps a new user install and run **Julia Reader** locally.
 
 ## 1. Requirements
 

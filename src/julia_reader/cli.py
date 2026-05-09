@@ -1,4 +1,4 @@
-"""Terminal entry — Julia Reader harness (no Orbos)."""
+"""Terminal entry — Julia Reader harness."""
 
 from __future__ import annotations
 
@@ -60,7 +60,7 @@ def main() -> None:
         print()
         print(
             f"  {theme.GOLD}{theme.BOLD}▌ JULIA READER HARNESS{theme.RESET}  "
-            f"{theme.STONE}(standalone · not Orbos){theme.RESET}"
+            f"{theme.STONE}(standalone harness){theme.RESET}"
         )
         print(
             f"  {theme.DIM}{theme.STONE}Progressive chunks → live understanding → Markdown Chronicle under "

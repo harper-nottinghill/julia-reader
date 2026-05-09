@@ -13,7 +13,7 @@ BOLD=$'\033[1m'
 
 echo
 echo "  ${GOLD}${BOLD}▌ JULIA READER HARNESS SETUP${RESET}"
-echo "  ${STONE}Standalone terminal Reader. No Orbos harness required.${RESET}"
+echo "  ${STONE}Standalone terminal Reader.${RESET}"
 echo
 
 if ! command -v python3 >/dev/null 2>&1; then

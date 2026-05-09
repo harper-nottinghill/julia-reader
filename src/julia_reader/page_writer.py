@@ -99,7 +99,7 @@ def write_book(
 def _write_preface(book_dir: Path, state: dict[str, Any]) -> None:
     body = f"""# Preface
 
-This generated book was created by the Orbos `/reader` spell.
+This generated book was created by the Julia Reader harness.
 
 ## Source
 

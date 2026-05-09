@@ -1,7 +1,7 @@
 """Harper Reader-style Lake Strings, breaks, and packets.
 
 This ports the useful data model from the Harper Reader reference into the
-Orbos `/reader` Chronicle pipeline without coupling to Electron.
+Julia Reader Chronicle pipeline without coupling to Electron.
 """
 
 from __future__ import annotations

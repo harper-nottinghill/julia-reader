@@ -1,6 +1,6 @@
 # Preface
 
-This generated book was created by the Orbos `/reader` spell.
+This generated book was created by the Julia Reader harness.
 
 ## Source
 

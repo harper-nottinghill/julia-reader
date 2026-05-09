@@ -1,4 +1,4 @@
-"""ANSI palette — same wizarding-world brutalist spirit as Orbos (standalone copy)."""
+"""ANSI palette — Reader ritual terminal styling (standalone)."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ BOLD = "\033[1m"
 DIM = "\033[2m"
 RESET = "\033[0m"
 
-# Reader ritual accents (match Orbos reader spell)
+# Reader ritual accents
 READER_CYAN = "\033[38;5;81m"
 READER_BLUE = "\033[38;5;75m"
 READER_PURPLE = "\033[38;5;141m"

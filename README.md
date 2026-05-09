@@ -1,8 +1,8 @@
 # Julia Reader Harness
 
-Standalone **progressive Reader** for the terminal: sentence splitting, dynamic chunking (≤2000 token estimates), per-chunk LLM summaries with a **live evolving understanding**, Lake Strings / breaks / packet JSON, Markdown **Chronicle** output, and validation.
+This repo is a **standalone progressive Reader harness** for the terminal: sentence splitting, dynamic chunking (≤2000 token estimates), per-chunk LLM summaries with a **live evolving understanding**, Lake Strings / breaks / packet JSON, Markdown **Chronicle** output, and validation.
 
-This repo is an **extracted, open-source–ready** sibling of the Reader spell inside [Orbos](https://github.com/nottinghillai/orbos). It does **not** import Orbos, Claude harness, orbit, or spells — only **stdlib** + your **OpenAI-compatible** HTTP endpoint.
+It ships as **stdlib-only Python** plus your **OpenAI-compatible** HTTP endpoint—no heavyweight framework imports required.
 
 ## For visitors (GitHub landing)
 
@@ -32,7 +32,7 @@ For the full argument (agentic reading, progressive loops, Chronicles, evaluatio
 
 ## Why “Julia Reader”
 
-Internal codename for the **Reader-as-its-own-harness** line: same ritual CLI colors and “agent take” loop (read → augment → write artifacts), packaged so others can harden chunking, prompts, and book layout without touching the full Orbos stack.
+Internal codename for the **Reader-as-its-own-harness** line: ritual CLI colors and an “agent take” loop (read → augment → write artifacts), packaged so others can harden chunking, prompts, and book layout in one focused codebase.
 
 ## Install (editable)
 
@@ -75,7 +75,7 @@ Any host that implements `POST /v1/chat/completions` in the usual OpenAI shape w
 
 ## Usage
 
-Write a Chronicle under **`<out>/_reader/<timestamp>_<slug>/`** (same layout as Orbos Reader: `source/`, `state/`, `book/`, `logs/`, `packet/`).
+Write a Chronicle under **`<out>/_reader/<timestamp>_<slug>/`** using this layout: `source/`, `state/`, `book/`, `logs/`, `packet/`.
 
 ```bash
 # From stdin
@@ -107,11 +107,11 @@ Flags:
 
 ## Lore / colors
 
-ANSI palette lives in `src/julia_reader/theme.py`. Progress lines match the Orbos Reader ritual (Archive Charm, Scourgify, Sentence Scrying, Augury, ...).
+ANSI palette lives in `src/julia_reader/theme.py`. Progress lines follow the Reader ritual names (Archive Charm, Scourgify, Sentence Scrying, Augury, …).
 
 ## Contributing
 
-PRs welcome: calmer break detection, quieter prompts, better JSON discipline per provider, tests, and packaging. Keep this tree **free of Orbos imports** so it stays publishable as its own repo.
+PRs welcome: calmer break detection, quieter prompts, better JSON discipline per provider, tests, and packaging. Keep dependencies minimal so this stays easy to fork and embed.
 
 ## License
 

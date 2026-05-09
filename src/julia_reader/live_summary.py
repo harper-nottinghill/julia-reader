@@ -1,4 +1,4 @@
-"""Incremental live understanding — LLM via OpenAI-compatible HTTP (no Orbos harness)."""
+"""Incremental live understanding — LLM via OpenAI-compatible HTTP."""
 
 from __future__ import annotations
 

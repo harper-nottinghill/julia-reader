@@ -1,4 +1,4 @@
-"""Julia Reader harness — progressive Chronicle pipeline (extracted from Orbos)."""
+"""Julia Reader harness — progressive Chronicle pipeline."""
 
 from __future__ import annotations
 
