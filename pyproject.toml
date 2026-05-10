@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "julia-reader"
-version = "0.1.0"
+version = "1.0.0"
 description = "Julia Reader — standalone progressive Reader Chronicle harness (terminal, OpenAI-compatible LLM)."
 readme = "README.md"
 requires-python = ">=3.10"

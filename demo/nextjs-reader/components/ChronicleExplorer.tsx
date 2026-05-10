@@ -11,6 +11,7 @@ type Manifest = {
   demoNote: string;
   bundledReaderModel: string;
   sourceTitle: string;
+  slug?: string;
   stats: { sentences: number; chunks: number; chapters: number; pages: number };
   files: string[];
 };
@@ -44,8 +45,8 @@ function insertPath(root: TreeNode, rel: string): void {
   }
 }
 
-function buildTree(files: string[]): TreeNode {
-  const root: TreeNode = { name: "dune-chronicle", path: null, children: [] };
+function buildTree(files: string[], rootName: string = "chronicle"): TreeNode {
+  const root: TreeNode = { name: rootName, path: null, children: [] };
   for (const f of files) insertPath(root, f);
   return root;
 }
@@ -166,8 +167,9 @@ export default function ChronicleExplorer({ basePath }: { basePath: string }) {
 
   const tree = useMemo(() => {
     if (!manifest?.files) return null;
-    return buildTree(manifest.files);
-  }, [manifest]);
+    const rootName = manifest.slug || basePath.replace(/^\/chronicle-?/, "") || "chronicle";
+    return buildTree(manifest.files, rootName);
+  }, [manifest, basePath]);
 
   const startPlayback = useCallback(() => {
     clearTimers();
@@ -365,7 +367,7 @@ export default function ChronicleExplorer({ basePath }: { basePath: string }) {
         <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2 border-b border-stone-100 pb-3">
             <code className="text-xs text-stone-600 md:text-sm">{selected}</code>
-            <span className="text-xs text-stone-400">served from /public/chronicle-dune/</span>
+            <span className="text-xs text-stone-400">served from /public{basePath}/</span>
           </div>
           {body}
         </section>

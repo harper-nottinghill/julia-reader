@@ -4,16 +4,21 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import sys
 import time
 from pathlib import Path
 from typing import Any, Callable
 
+import logging as _logging
+
 from .book_planner import build_book_plan
 from .chunker import build_chunks
+from .error_logger import log_error
 from .lake_strings import build_lake_strings, build_packet, generate_break_marked_text
 from .live_summary import apply_update, summarize_chunk
+from .output_scaffold import generate_manifest
 from .page_writer import write_book
-from .reader_config import detect_title, estimate_tokens, make_run_paths, safe_slug
+from .reader_config import PipelineConfig, ReaderPaths, detect_title, estimate_tokens, make_run_paths, safe_slug
 from .sentence_splitter import split_sentences
 from .text_normalizer import normalize_text
 from .validator import validate_reader_run
@@ -77,6 +82,60 @@ def _reader_live_header(*, title: str, folder: Path, model: str, live: bool) -> 
     print()
 
 
+def _validate_chunk(chunk: dict[str, Any], index: int | None = None) -> str | None:
+    """Validate a chunk dict has required keys and non-empty content.
+
+    Returns an error message string if the chunk is malformed, or ``None``
+    if the chunk looks valid.
+    """
+    label = f"Chunk {index}" if index is not None else f"Chunk {chunk.get('chunk_id', '?')}"
+    if not isinstance(chunk, dict):
+        return f"{label}: expected dict, got {type(chunk).__name__} — skipping."
+    chunk_id = chunk.get("chunk_id")
+    if not chunk_id:
+        return f"{label}: missing chunk_id — skipping."
+    sentence_ids = chunk.get("sentence_ids")
+    if sentence_ids is None:
+        return f"{label} ({chunk_id}): missing sentence_ids — skipping."
+    if not isinstance(sentence_ids, list):
+        return f"{label} ({chunk_id}): sentence_ids is {type(sentence_ids).__name__}, expected list — skipping."
+    if not sentence_ids:
+        return f"{label} ({chunk_id}): has empty sentence_ids (no text content) — skipping."
+    return None
+
+
+def _load_state_file(path: Path, description: str = "state file") -> Any:
+    """Load a JSON state file with clear errors if missing or malformed.
+
+    Raises ``SystemExit(1)`` so the caller can rely on a valid return.
+    """
+    if not path.exists():
+        msg = (
+            f"Required {description} not found: {path}\n"
+            f"Expected location: {path.parent}\n"
+            f"Run the earlier pipeline stage first to generate this file."
+        )
+        print(f"[ERROR] {msg}", file=sys.stderr)
+        raise SystemExit(1)
+    raw = path.read_text(encoding="utf-8")
+    if not raw.strip():
+        msg = (
+            f"Required {description} is empty (0 bytes of content): {path}\n"
+            f"This file was expected to contain JSON data."
+        )
+        print(f"[ERROR] {msg}", file=sys.stderr)
+        raise SystemExit(1)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        msg = (
+            f"Failed to parse JSON in {description} ({path.name}): {exc}\n"
+            f"File may be truncated or corrupted."
+        )
+        print(f"[ERROR] {msg}", file=sys.stderr)
+        raise SystemExit(1)
+
+
 def _chunk_text(chunk: dict[str, Any], sentence_by_id: dict[str, dict[str, Any]]) -> str:
     return "\n".join(str(sentence_by_id[sid]["text"]) for sid in chunk["sentence_ids"] if sid in sentence_by_id)
 
@@ -106,31 +165,76 @@ def _initial_state(run_id: str, raw: str, normalized: str) -> dict[str, Any]:
 
 def run_reader(
     *,
-    raw_text: str,
-    base_dir: Path,
-    complete: Callable[[str, str], str] | None,
-    model_label: str,
+    raw_text: str = "",
+    base_dir: Path | None = None,
+    complete: Callable[[str, str], str] | None = None,
+    model_label: str = "local-fallback",
     use_llm: bool = True,
     live: bool = True,
+    max_pages_per_chunk: int = 1,
+    config: PipelineConfig | None = None,
 ) -> dict[str, Any] | None:
-    """Run the full Reader pipeline. Returns summary metadata or None on empty input."""
-    raw = (raw_text or "").strip()
+    """Run the full Reader pipeline. Returns summary metadata or None on empty input.
+
+    Two calling conventions are supported:
+
+    1. **Explicit parameters** (backward compatible): pass ``raw_text`` and
+       ``base_dir`` plus the other keyword arguments.
+    2. **PipelineConfig object**: pass a single ``config`` — all other keyword
+       arguments are ignored in favour of the config's fields.
+    """
+    if config is not None:
+        raw = (config.raw_text or "").strip()
+        paths = config.paths
+        use_llm = config.use_llm
+        live = config.live
+        max_pages_per_chunk = config.max_pages_per_chunk
+        reader_model = config.model_label
+        complete = config.complete
+        prompt_dir = config.prompt_dir
+    else:
+        raw = (raw_text or "").strip()
+        if not raw:
+            print(
+                "[ERROR] pipeline.py:run_reader — Input text is empty (0 characters after stripping whitespace). "
+                "Nothing to process.",
+                file=sys.stderr,
+            )
+            return None
+        if base_dir is None:
+            base_dir = Path(".")
+        paths = make_run_paths(base_dir, raw)
+        reader_model = model_label
+        prompt_dir = _prompt_dir()
+
     if not raw:
+        print(
+            "[ERROR] pipeline.py:run_reader — Input text is empty (0 characters after stripping whitespace). "
+            "Nothing to process.",
+            file=sys.stderr,
+        )
         return None
 
-    paths = make_run_paths(base_dir, raw)
     run_id = paths.root.name
     run_log = paths.logs / "reader_run_log.md"
     errors_log = paths.logs / "errors.log"
     llm_log = paths.logs / "llm_calls.jsonl"
-    packet_dir = paths.root / "packet"
+    packet_dir = paths.packet
     packet_dir.mkdir(parents=True, exist_ok=True)
     started_at = time.monotonic()
-    reader_model = model_label
     _reader_live_header(title=detect_title(raw), folder=paths.root, model=reader_model, live=live)
     run_log.write_text("# Reader Run Log\n\n", encoding="utf-8")
     errors_log.write_text("", encoding="utf-8")
     llm_log.write_text("", encoding="utf-8")
+
+    # Wire the LLM retry logger to this run's errors.log so every retry
+    # attempt is captured alongside other structured error entries.
+    _retry_handler = _logging.FileHandler(errors_log, encoding="utf-8")
+    _retry_handler.setFormatter(
+        _logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+    )
+    _logging.getLogger("julia_reader.llm_retry").addHandler(_retry_handler)
+
     _log(run_log, "run started")
 
     (paths.source / "raw_input.txt").write_text(raw + "\n", encoding="utf-8")
@@ -227,11 +331,48 @@ def run_reader(
     sentence_by_id = {s["sentence_id"]: s for s in sentences}
     shift_lines = ["# Subject Shift Log", ""]
     state["status"] = "summarizing"
-    for chunk in chunks:
+    skipped_chunk_count = 0
+    for idx, chunk in enumerate(chunks):
+        # --- Edge case: validate chunk structure before processing ---
+        validation_error = _validate_chunk(chunk, index=idx)
+        if validation_error:
+            log_error(
+                error_type="malformed_chunk",
+                message=validation_error,
+                affected_id=chunk.get("chunk_id", f"index_{idx}"),
+                errors_path=errors_log,
+            )
+            skipped_chunk_count += 1
+            _reader_live(
+                "⚠ Skipped Chunk",
+                validation_error,
+                color=_READER_RED,
+                live=live,
+            )
+            continue
+
+        # --- Edge case: check chunk text content is not empty ---
+        text = _chunk_text(chunk, sentence_by_id)
+        if not text.strip():
+            msg = f"Chunk {idx} ({chunk['chunk_id']}) has empty text content after resolving sentences — skipping."
+            log_error(
+                error_type="empty_chunk_content",
+                message=msg,
+                affected_id=chunk["chunk_id"],
+                errors_path=errors_log,
+            )
+            skipped_chunk_count += 1
+            _reader_live(
+                "⚠ Skipped Chunk",
+                msg,
+                color=_READER_RED,
+                live=live,
+            )
+            continue
+
         state["current_chunk_id"] = chunk["chunk_id"]
         state["current_sentence_id"] = chunk["end_sentence"]
         _json(paths.state / "reader_state.json", state)
-        text = _chunk_text(chunk, sentence_by_id)
         _reader_live(
             "✦ Reading Rune",
             f"{chunk['chunk_id']} enters the reading circle",
@@ -249,18 +390,29 @@ def run_reader(
             color=_READER_PINK,
             live=live and use_llm and complete is not None,
         )
-        update = summarize_chunk(
-            complete=complete,
-            model_label=reader_model,
-            chunk=chunk,
-            chunk_text=text,
-            previous_live_summary=state.get("current_understanding", ""),
-            reader_state=state,
-            prompt_dir=_prompt_dir(),
-            llm_log_path=llm_log,
-            errors_path=errors_log,
-            use_llm=use_llm,
-        )
+        try:
+            update = summarize_chunk(
+                complete=complete,
+                model_label=reader_model,
+                chunk=chunk,
+                chunk_text=text,
+                previous_live_summary=state.get("current_understanding", ""),
+                reader_state=state,
+                prompt_dir=prompt_dir,
+                llm_log_path=llm_log,
+                errors_path=errors_log,
+                use_llm=use_llm,
+            )
+        except Exception as exc:
+            log_error(
+                error_type="unexpected_state",
+                message=f"Unexpected error summarizing chunk {chunk['chunk_id']}: {exc}",
+                affected_id=chunk["chunk_id"],
+                details={"skipped_so_far": skipped_chunk_count + 1},
+                errors_path=errors_log,
+            )
+            skipped_chunk_count += 1
+            continue
         apply_update(chunk, state, update)
         _reader_live(
             "✦ Marginalia",
@@ -288,6 +440,27 @@ def run_reader(
         _json(paths.state / "reader_state.json", state)
         _log(run_log, f"{chunk['chunk_id']} summarized")
 
+    # Report skipped chunks
+    if skipped_chunk_count > 0:
+        msg = (
+            f"Skipped {skipped_chunk_count} of {len(chunks)} chunks during summarization. "
+            "See errors.log for details on each skipped chunk."
+        )
+        log_error(
+            error_type="skipped_chunks_summary",
+            message=msg,
+            affected_id="pipeline_summary",
+            details={"skipped": skipped_chunk_count, "total": len(chunks)},
+            errors_path=errors_log,
+        )
+        _reader_live(
+            "⚠ Chunk Summary",
+            f"{skipped_chunk_count} chunks skipped",
+            detail=f"of {len(chunks)} total — see errors.log",
+            color=_READER_RED,
+            live=live,
+        )
+
     (paths.state / "subject_shift_log.md").write_text("\n".join(shift_lines).rstrip() + "\n", encoding="utf-8")
     _log(run_log, "live summary updated")
     _reader_live(
@@ -312,7 +485,15 @@ def run_reader(
     )
 
     state["status"] = "writing_book"
-    stats = write_book(book_dir=paths.book, plan=plan, chunks=chunks, sentences=sentences, reader_state=state)
+    stats = write_book(
+        book_dir=paths.book,
+        plan=plan,
+        chunks=chunks,
+        sentences=sentences,
+        reader_state=state,
+        state_dir=paths.state,
+        max_pages_per_chunk=max_pages_per_chunk,
+    )
     _reader_live(
         "✦ Quick-Quotes Quill",
         "Markdown pages written",
@@ -380,7 +561,26 @@ def run_reader(
         color=validation_color,
         live=live,
     )
-    _log(run_log, "run complete")
+    # Generate _demo-manifest.json for NextJS ChronicleExplorer discovery
+    _chronicle_files = sorted(
+        p.relative_to(paths.root).as_posix()
+        for p in paths.root.rglob("*")
+        if p.is_file() and p.name != "_demo-manifest.json"
+    )
+    generate_manifest(
+        paths.root,
+        state.get("source_title", "Reader Run"),
+        source_filename=state.get("source_title", ""),
+        file_size_bytes=len(raw),
+        bundled_reader_model=reader_model,
+        chunk_count=len(chunks),
+        chapter_count=stats["chapters"],
+        page_count=stats["pages"],
+        sentence_count=len(sentences),
+        files=_chronicle_files,
+        processing_status="complete",
+    )
+    _log(run_log, "_demo-manifest.json generated")
     _reader_live(
         "✦ Chronicle Complete",
         "the book is ready",

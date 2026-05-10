@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 from typing import Any, Callable
 
+from .error_logger import log_error
 from .reader_config import estimate_tokens
 from .subject_shift import keywords
 
@@ -104,9 +105,13 @@ def summarize_chunk(
                 raise ValueError("model response did not contain JSON")
             except Exception as exc:  # noqa: PERF203
                 log_entry["error"] = f"attempt {attempt}: {exc}"
-                err_line = f"{log_entry['timestamp']} {chunk['chunk_id']} {exc}\n"
-                prev = errors_path.read_text(encoding="utf-8", errors="replace") if errors_path.exists() else ""
-                errors_path.write_text(prev + err_line, encoding="utf-8")
+                log_error(
+                    error_type="llm_error",
+                    message=f"LLM call failed for chunk {chunk['chunk_id']} (attempt {attempt}): {exc}",
+                    affected_id=chunk["chunk_id"],
+                    details={"attempt": attempt, "model": model_label},
+                    errors_path=errors_path,
+                )
     if not data:
         data = _fallback_chunk_update(chunk_text, previous_live_summary, chunk)
         log_entry["success"] = False

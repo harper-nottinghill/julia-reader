@@ -117,6 +117,20 @@ Flags:
 - `--no-llm` — skip HTTP; local fallback summaries only
 - `--quiet` — suppress colored ritual progress lines
 - `--env-file` — dotenv path (default `.env`)
+- `--max-pages-per-chunk` — max pages per chunk (default: 1; set >1 for multi-page)
+- `--book-name` — override book name for directory naming and manifest
+
+### Multi-book processing
+
+Julia Reader processes one document per invocation. To build Chronicles for multiple books (e.g., an essay collection), run it once per file with a shared output directory:
+
+```bash
+for doc in essays/*.txt; do
+  julia-reader --input "$doc" --output ./chronicles --book-name "$(basename "$doc" .txt)"
+done
+```
+
+Each run produces an independent Chronicle under `./chronicles/_reader/`. See **[CLI reference](docs/JuliaReaderCLI/cli-reference.md)** for full flag documentation and examples.
 
 ## Agent take loop (preserved)
 

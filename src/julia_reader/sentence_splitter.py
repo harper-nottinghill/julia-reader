@@ -7,8 +7,76 @@ from typing import Any
 
 from .reader_config import estimate_tokens
 
+# ---------------------------------------------------------------------------
+# Sentence-boundary detection
+# ---------------------------------------------------------------------------
+
+# Common abbreviations that should NOT trigger a sentence break.
+_ABBREVIATIONS = frozenset({
+    # Titles / honorifics
+    "mr", "mrs", "ms", "miss", "dr", "prof", "rev", "hon", "jr", "sr",
+    "sgt", "capt", "lt", "col", "gen", "admiral", "gov", "pres",
+    # Academic / professional
+    "inc", "ltd", "corp", "co", "dept", "div", "assn", "est",
+    # Misc
+    "vs", "etc", "approx", "appt", "apt", "dept", "dpt", "est",
+    "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept",
+    "oct", "nov", "dec", "mon", "tue", "wed", "thu", "fri", "sat", "sun",
+    # Common Latin abbreviations
+    "i.e", "e.g", "a.m", "p.m", "al", "cf", "nb",
+})
+
+# Regex that matches a trailing abbreviation word (e.g. "Mr." or "U.S.")
+# followed by a period at the end of a token.
+_ABBREV_PERIOD = re.compile(
+    r"\b(" + "|".join(re.escape(a) for a in sorted(_ABBREVIATIONS, key=len, reverse=True)) + r")\.$",
+    re.IGNORECASE,
+)
+
+# Ellipsis patterns
+_ELLIPSIS = re.compile(r"\.{3,}|…+")
+
+# Main sentence-boundary regex — looks for .!? followed by whitespace
+# and then a capital letter, digit, quote, or list marker.
 _SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\"'(\[]|[-*]\s)")
+
 _SPEAKER = re.compile(r"^[A-Za-z][A-Za-z0-9 _.-]{0,40}:\s+")
+
+
+def _is_abbreviation_boundary(before: str, after: str) -> bool:
+    """Return True if the period in *before* is part of an abbreviation."""
+    # Check if the token ending with the period is a known abbreviation
+    if _ABBREV_PERIOD.search(before):
+        return True
+    # Single-letter initials (e.g. "U. S.", "J. R. R.")
+    if re.search(r"\b[A-Z]\.$", before):
+        return True
+    return False
+
+
+def _split_sentences_in_text(text: str) -> list[str]:
+    """Split a line of prose into sentences, respecting abbreviations and ellipses."""
+    # First do a naive split on sentence boundaries
+    raw_splits = _SENTENCE_BOUNDARY.split(text)
+    if len(raw_splits) <= 1:
+        return [text.strip()] if text.strip() else []
+
+    # Re-join splits that were incorrectly broken at abbreviations
+    sentences: list[str] = []
+    current = raw_splits[0]
+    for i in range(1, len(raw_splits)):
+        # Check if current ends with an abbreviation period
+        before = current.rstrip()
+        after = raw_splits[i].lstrip()
+        if before.endswith(".") and _is_abbreviation_boundary(before, after):
+            current = current + " " + raw_splits[i]
+        else:
+            if current.strip():
+                sentences.append(current.strip())
+            current = raw_splits[i]
+    if current.strip():
+        sentences.append(current.strip())
+    return sentences
 
 
 def _is_heading(line: str) -> bool:
@@ -56,10 +124,10 @@ def split_sentences(normalized: str) -> list[dict[str, Any]]:
                 spans = [text]
             elif _SPEAKER.match(text):
                 speaker, _, rest = text.partition(":")
-                rest_parts = [p.strip() for p in _SENTENCE_BOUNDARY.split(rest.strip()) if p.strip()]
+                rest_parts = [p.strip() for p in _split_sentences_in_text(rest.strip()) if p.strip()]
                 spans = [f"{speaker}: {p}" for p in rest_parts] or [text]
             else:
-                spans = [p.strip() for p in _SENTENCE_BOUNDARY.split(text) if p.strip()]
+                spans = _split_sentences_in_text(text)
             for span in spans:
                 for safe in _split_long_span(span):
                     start = normalized.find(safe, line_start)

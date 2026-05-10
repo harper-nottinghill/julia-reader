@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type OkResponse = {
   ok: true;
@@ -34,14 +34,97 @@ The Reader builds a Chronicle: a live summary, a book plan, markdown pages, and 
 Second paragraph: the Next.js route shells out to the Python package in this repo (\`python -m julia_reader\`), reads the artifacts from a temp directory, and returns the live summary plus the book index here in the browser.
 `;
 
+/** Map HTTP status / error text to a user-friendly message with actionable guidance. */
+function mapError(status: number, errorBody: string): { message: string; action: string } {
+  if (status === 401 || status === 403) {
+    return {
+      message: "Authentication failed.",
+      action: "Check that your API key is valid and has not expired. Update it in .env.local.",
+    };
+  }
+  if (status === 429) {
+    return {
+      message: "Rate limit reached.",
+      action: "Wait a moment and try again. If this persists, check your provider dashboard.",
+    };
+  }
+  if (status === 422 && /api.key/i.test(errorBody)) {
+    return {
+      message: "API key is missing or invalid.",
+      action: "Set JULIA_READER_API_KEY or OPENAI_API_KEY in .env.local and restart the dev server.",
+    };
+  }
+  if (status >= 500) {
+    return {
+      message: "Server error.",
+      action: "Check the terminal running `next dev` for details. The Python backend may have crashed.",
+    };
+  }
+  if (status === 400) {
+    return {
+      message: "Bad request.",
+      action: "The request was malformed. Try refreshing the page.",
+    };
+  }
+  return {
+    message: "Something went wrong.",
+    action: "Please try again. If the problem persists, check the server logs.",
+  };
+}
+
 export default function PlaygroundPage() {
   const [text, setText] = useState(SAMPLE);
   const [noLlm, setNoLlm] = useState(true);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<"live" | "index">("live");
   const [result, setResult] = useState<OkResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+
+  // Error state now holds structured message + actionable guidance
+  const [error, setError] = useState<{ message: string; action: string } | null>(null);
   const [stderr, setStderr] = useState<string | null>(null);
+
+  // API key configuration state
+  const [apiKeyConfigured, setApiKeyConfigured] = useState<boolean | null>(null); // null = unknown (loading)
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  // Check API key status on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/config/status");
+        if (!res.ok) return;
+        const data = (await res.json()) as { configured: boolean; model: string };
+        if (!cancelled) setApiKeyConfigured(data.configured);
+      } catch {
+        // Silently ignore — the banner simply won't show if we can't check
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Persist banner dismissal in sessionStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (sessionStorage.getItem("jr-banner-dismissed") === "true") {
+        setBannerDismissed(true);
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }, []);
+
+  const dismissBanner = useCallback(() => {
+    setBannerDismissed(true);
+    try {
+      sessionStorage.setItem("jr-banner-dismissed", "true");
+    } catch {
+      // Ignore storage errors
+    }
+  }, []);
 
   const run = useCallback(async () => {
     setLoading(true);
@@ -54,19 +137,38 @@ export default function PlaygroundPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, noLlm }),
       });
+
       const data = (await res.json()) as OkResponse | ErrResponse;
+
       if (!data.ok) {
-        setError(data.error);
+        // Map to structured error
+        if (!res.ok) {
+          setError(mapError(res.status, data.error));
+        } else {
+          setError({
+            message: data.error,
+            action: "Check the details below and try again.",
+          });
+        }
         setStderr(data.stderr ?? null);
         return;
       }
+
+      // Success — hide the warning banner
       setResult(data);
+      setApiKeyConfigured(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError({
+        message: "Network error.",
+        action:
+          "Could not reach the server. Make sure the dev server is running (`npm run dev`).",
+      });
     } finally {
       setLoading(false);
     }
   }, [text, noLlm]);
+
+  const showBanner = apiKeyConfigured === false && !bannerDismissed;
 
   return (
     <main className="mx-auto max-w-4xl bg-[var(--paper)] px-6 py-10">
@@ -80,6 +182,46 @@ export default function PlaygroundPage() {
           model.
         </p>
       </header>
+
+      {/* ── Warning banner: API key not configured ── */}
+      {showBanner && (
+        <div
+          className="mb-6 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm"
+          role="alert"
+        >
+          <span className="mt-0.5 text-lg leading-none" aria-hidden="true">
+            ⚠️
+          </span>
+          <div className="flex-1">
+            <p className="font-semibold">API key not configured</p>
+            <p className="mt-1">
+              The reader cannot call an LLM without a valid API key. Uncheck <strong>offline mode</strong> after
+              configuring your key.
+            </p>
+            <p className="mt-2">
+              <strong>Fix:</strong> Add your key to{" "}
+              <code className="rounded bg-amber-100 px-1.5 py-0.5 text-xs">.env.local</code> as{" "}
+              <code className="rounded bg-amber-100 px-1.5 py-0.5 text-xs">
+                JULIA_READER_API_KEY=sk-...
+              </code>{" "}
+              or{" "}
+              <code className="rounded bg-amber-100 px-1.5 py-0.5 text-xs">
+                OPENAI_API_KEY=sk-...
+              </code>
+              , then restart the dev server. See{" "}
+              <code className="rounded bg-amber-100 px-1.5 py-0.5 text-xs">env.example</code> for all options.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={dismissBanner}
+            className="shrink-0 rounded p-1 text-amber-600 hover:bg-amber-100 hover:text-amber-900"
+            aria-label="Dismiss warning"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <section className="space-y-4">
         <label className="block text-sm font-medium text-stone-700">Source text</label>
@@ -110,18 +252,37 @@ export default function PlaygroundPage() {
         </div>
       </section>
 
+      {/* ── Inline error with actionable guidance ── */}
       {error && (
         <div
           className="mt-8 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900"
           role="alert"
         >
-          <p className="font-medium">Run failed</p>
-          <p className="mt-1 whitespace-pre-wrap">{error}</p>
-          {stderr && (
-            <pre className="mt-3 max-h-48 overflow-auto rounded bg-red-100/80 p-3 text-xs text-red-950">
-              {stderr}
-            </pre>
-          )}
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 text-base leading-none" aria-hidden="true">
+              ❌
+            </span>
+            <div className="flex-1">
+              <p className="font-semibold">{error.message}</p>
+              <p className="mt-1 text-red-800">{error.action}</p>
+              {stderr && (
+                <pre className="mt-3 max-h-48 overflow-auto rounded bg-red-100/80 p-3 text-xs text-red-950">
+                  {stderr}
+                </pre>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setStderr(null);
+              }}
+              className="shrink-0 rounded p-1 text-red-400 hover:bg-red-100 hover:text-red-700"
+              aria-label="Dismiss error"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 

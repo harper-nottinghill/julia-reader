@@ -70,19 +70,117 @@ async function latestRunRoot(outDir: string): Promise<string> {
   return path.join(readerDir, entries[0]);
 }
 
-export async function runJuliaReader(options: {
+/**
+ * Read the bundled chronicle data from public/chronicle-*.
+ * Discovers the first chronicle directory containing _demo-manifest.json.
+ * Used as a fallback when no API key is provided.
+ */
+async function loadBundledChronicle(): Promise<ReaderRunResult> {
+  const publicDir = path.join(process.cwd(), "public");
+
+  // Discover chronicle directories
+  let chronicleDir: string | null = null;
+  try {
+    const entries = await fs.readdir(publicDir);
+    // Sort to get most recent or first chronicle- directory with a manifest
+    const chronicleEntries = entries
+      .filter((e) => e.startsWith("chronicle-"))
+      .sort();
+    for (const entry of chronicleEntries) {
+      const manifestPath = path.join(publicDir, entry, "_demo-manifest.json");
+      try {
+        await fs.access(manifestPath);
+        chronicleDir = path.join(publicDir, entry);
+        break;
+      } catch {
+        continue;
+      }
+    }
+  } catch {
+    // Fall through to default
+  }
+
+  // Fallback to chronicle-dune for backward compatibility
+  if (!chronicleDir) {
+    chronicleDir = path.join(publicDir, "chronicle-dune");
+  }
+
+  const [stateRaw, planRaw, packetRaw, validationRaw, liveSummary, bookIndex] =
+    await Promise.all([
+      fs.readFile(path.join(chronicleDir, "state", "reader_state.json"), "utf8"),
+      fs.readFile(path.join(chronicleDir, "state", "book_plan.json"), "utf8"),
+      fs.readFile(path.join(chronicleDir, "state", "reader_packet.json"), "utf8"),
+      fs.readFile(path.join(chronicleDir, "logs", "validation_report.md"), "utf8"),
+      fs.readFile(path.join(chronicleDir, "state", "live_summary.md"), "utf8"),
+      fs.readFile(path.join(chronicleDir, "book", "00_index.md"), "utf8"),
+    ]);
+
+  const state = JSON.parse(stateRaw) as {
+    total_sentences?: number;
+    total_chunks?: number;
+  };
+  const plan = JSON.parse(planRaw) as {
+    chapters?: Array<{ page_plan?: unknown[] }>;
+  };
+  const packet = JSON.parse(packetRaw) as { modelUsed?: string };
+
+  const chapters = plan.chapters?.length ?? 0;
+  const pages =
+    plan.chapters?.reduce((n, ch) => n + (ch.page_plan?.length ?? 0), 0) ?? 0;
+
+  const { errors, warnings } = parseValidationCounts(validationRaw);
+
+  return {
+    ok: true,
+    summary: {
+      folderName: `${path.basename(chronicleDir)} (bundled)`,
+      sentences: Number(state.total_sentences ?? 0),
+      chunks: Number(state.total_chunks ?? 0),
+      chapters,
+      pages,
+      readerModel: packet.modelUsed ?? "bundled",
+      errors,
+      warnings,
+    },
+    liveSummary,
+    bookIndex,
+  };
+}
+
+export interface ReaderRunnerOptions {
   text: string;
   noLlm: boolean;
-}): Promise<ReaderRunResult | ReaderRunError> {
+  apiKey?: string;
+  modelName?: string;
+}
+
+export async function runJuliaReader(
+  options: ReaderRunnerOptions,
+): Promise<ReaderRunResult | ReaderRunError> {
   const text = (options.text ?? "").trim();
+
+  // When no text is provided but no API key is set either,
+  // fall back to the bundled chronicle data immediately.
   if (!text) {
+    const key = options.apiKey?.trim();
+    if (!key) {
+      return loadBundledChronicle();
+    }
     return { ok: false, error: "Provide non-empty text." };
   }
+
   if (text.length > MAX_INPUT_CHARS) {
     return {
       ok: false,
       error: `Input too long (max ${MAX_INPUT_CHARS.toLocaleString()} characters).`,
     };
+  }
+
+  // If LLM is needed but no API key is present, fall back to bundled data
+  const key = options.apiKey?.trim();
+  if (!options.noLlm && !key) {
+    console.warn("No API key provided; using bundled chronicle data.");
+    return loadBundledChronicle();
   }
 
   const repoRoot = getRepoRoot();
@@ -96,9 +194,17 @@ export async function runJuliaReader(options: {
     args.push("--no-llm");
   }
 
+  // Forward model name via CLI flag (takes precedence over JULIA_READER_MODEL env)
+  const modelName = options.modelName?.trim();
+  if (modelName) {
+    args.push("--model", modelName);
+  }
+
   const env = {
     ...process.env,
     PYTHONPATH: path.join(repoRoot, "src"),
+    ...(key ? { JULIA_READER_API_KEY: key } : {}),
+    ...(modelName ? { JULIA_READER_MODEL: modelName } : {}),
   };
 
   try {

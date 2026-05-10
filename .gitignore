@@ -27,3 +27,6 @@ demo/nextjs-reader/out/
 .vscode/
 *.swp
 .orbos/
+.harper_see/
+.jim/
+test-fixtures/
