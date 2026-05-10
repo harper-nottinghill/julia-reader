@@ -148,6 +148,26 @@ ANSI palette lives in `src/julia_reader/theme.py`. Progress lines follow the Rea
 
 PRs welcome: calmer break detection, quieter prompts, better JSON discipline per provider, tests, and packaging. Keep dependencies minimal so this stays easy to fork and embed.
 
+## Changelog
+
+### v1.0.0 (2025-05-10)
+
+First stable release of the Julia Reader terminal bundle.
+
+- **Terminal bundle** — self-contained CLI under `terminal/` with `setup.sh`, `bin/julia`, and `bin/julia-reader` launchers.
+- **Distributable tarball** — `bash scripts/build-terminal-bundle.sh` produces a portable archive that installs from vendored source with no repository access required.
+- **Dune (2021) demo chronicle** — expanded chapter pages and validation report in the Next.js demo.
+- **New modules** — `error_logger.py` and `output_scaffold.py` for structured error tracking and Chronicle directory scaffolding.
+- **Test suite** — integration tests for the generalized pipeline and validation.
+- **Model configuration** — `scripts/configure-model.sh` for interactive LLM provider setup.
+- **CLI reference** — full flag documentation in `docs/JuliaReaderCLI/`.
+- **Smoke-tested** — distributable tarball verified end-to-end in a clean-room environment (checksums pass, setup succeeds, `julia-reader --no-llm` produces a complete Chronicle).
+
+**Download:** `julia-reader-terminal-v1.0.0.tar.gz` (48 KB)
+**SHA-256:** `259001b9e22532c8389fc6c3e51f8945da25bf7600ad51c461bab82ceaf2abb5`
+
+---
+
 ## License
 
 MIT — see `LICENSE`.
